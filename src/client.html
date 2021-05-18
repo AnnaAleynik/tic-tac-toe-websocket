@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script>
+        function addMessage(message) {
+            var chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += "<p>" + message + "</p>";
+        }
+        function addAlert(message) {
+            var chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += "<p>" + message + "</b></p>";
+        }
+        function blockInput() {
+            document.getElementById("x").disabled = true;
+            document.getElementById("y").disabled = true;
+        }
+        function addButtons() {
+            document.getElementById("restart").hidden = false;
+        }
+        function unblockInput() {
+            document.getElementById("x").disabled = false;
+            document.getElementById("y").disabled = false;
+        }
+        function hideButtons() {
+            document.getElementById("restart").hidden = true;
+        }
+
+        function init() {
+            webSocket = new WebSocket('ws://127.0.0.1:8080/game');
+
+            webSocket.onopen = function (event) {
+                addAlert('Connection was opened.');
+            };
+
+            webSocket.onmessage = function (event) {
+                var mes = JSON.parse(event.data);
+                console.log(event.data);
+                var text = mes.value;
+                console.log(text);
+                switch (mes.type) {
+                    case 'start' :
+                        addAlert(text);
+                        break;
+                    case 'play' :
+                        addAlert(text);
+                        break;
+                    case 'win' :
+                        blockInput();
+                        addButtons();
+                        addAlert(text);
+                        break;
+                }
+
+            };
+
+            webSocket.onclose = function (event) {
+                addAlert('Connection was closed.');
+            };
+        }
+
+        function sendRestart() {
+            if (webSocket) {
+                unblockInput();
+                hideButtons();
+                var a = {type: "restart"};
+                webSocket.send(JSON.stringify(a));
+            }
+        }
+
+        function sendMessage() {
+            if (webSocket) {
+                var xField = document.getElementById("x");
+                var yField = document.getElementById("y");
+                var a = {type: "play", coordinates: { x: xField.value, y: yField.value}}
+                // webSocket.send(messageField.value);
+                webSocket.send(JSON.stringify(a));
+                xField.value = "";
+                yField.value = "";
+            }
+        }
+
+    </script>
+</head>
+<body onload="init();">
+<h2 style="text-align: center">tic-tac-toe</h2>
+<div style="margin:30px auto;width:750px;">
+    <div id="chat-box" style="border:4px solid black;height:500px;padding:5px;overflow-x:hidden;overflow-y:scroll;"></div>
+    <div style="float:right;margin-top:5px;">
+        <button id="restart" onclick="sendRestart()" hidden>Restart</button>
+        <label for="x">x:</label>
+        <input type="select" id="x" min="0" max="2" style="margin-left: 3px">
+        <label for="y">y:</label>
+        <input type="number" id="y" min="0" max="2" style="margin-left: 3px">
+        <button onClick="sendMessage()">Put</button>
+    </div>
+</div>
+</body>
+</html>
